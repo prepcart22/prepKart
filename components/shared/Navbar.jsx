@@ -142,7 +142,7 @@ export default function Navbar() {
       <div className='hidden md:flex items-center justify-between max-w-[1600px] mx-auto py-2 px-4 md:px-8'>
         {/* LEFT */}
         <div className='flex items-center justify-between gap-x-8 md:gap-x-16'>
-          {/* LOGO - Add locale */}
+          {/* LOGO - locale */}
           <Link href={`/${locale}`} onClick={() => setActiveHash("")}>
             <Image
               src='/logo1.png'
@@ -152,6 +152,9 @@ export default function Navbar() {
               className='cursor-pointer w-32 lg:w-40 xl:w-44 h-auto'
               priority
             />
+            <p className='text-[13px] text-gray-600 pl-16.5 -mt-4.5'>
+              {t("underLogoText")}
+            </p>
           </Link>
         </div>
         <div>
@@ -267,9 +270,12 @@ export default function Navbar() {
             className='cursor-pointer w-28 sm:w-36 md:w-40 h-auto'
             priority
           />
+          <p className='text-[10px] text-gray-600 pl-10.5 -mt-2.5'>
+            {t("underLogoText")}
+          </p>
         </Link>
 
-        <div className='-mr-28'>
+        <div className='-mr-14'>
           {user && user.tier === "admin" && (
             <Link
               href={`/${locale}/admin`}
@@ -299,6 +305,18 @@ export default function Navbar() {
             />
           )}
         </div>
+        {/* <div className='flex gap-x-2 -mr-28 text-sm'>
+          <Link
+            href={createLocalizedPath("en")}
+            className={currentLocale === "en" ? "font-bold" : ""}>
+            EN
+          </Link>
+          <Link
+            href={createLocalizedPath("fr")}
+            className={currentLocale === "fr" ? "font-bold" : ""}>
+            FR
+          </Link>
+        </div> */}
       </div>
 
       {/* ---------------- MOBILE MENU DROPDOWN ---------------- */}

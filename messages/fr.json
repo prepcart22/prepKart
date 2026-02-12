@@ -59,6 +59,7 @@
   },
   "navbar": {
     "home": "Accueil",
+    "underLogoText": "Services de planification de repas",
     "howItWorks": "Comment Ça Marche",
     "pricing": "Tarifs",
     "recipes": "Recettes",
