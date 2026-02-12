@@ -57,20 +57,20 @@ export default function PlanDetailPage() {
         }
 
         const planData = await planResponse.json();
-        console.log("Plan data:", planData); // Debug: check structure
-        console.log("Plan groceryListId:", planData.groceryListId); // Check if exists
+        // console.log("Plan data:", planData); 
+        // console.log("Plan groceryListId:", planData.groceryListId); 
 
         setPlan(planData);
 
         // Check if plan has groceryListId
         if (planData.groceryListId) {
-          console.log(
-            "Setting groceryListId from plan:",
-            planData.groceryListId,
-          );
+          // console.log(
+          //   "Setting groceryListId from plan:",
+          //   planData.groceryListId,
+          // );
           setGroceryListId(planData.groceryListId);
         } else {
-          console.log("No groceryListId in plan, trying to find...");
+          // console.log("No groceryListId in plan, trying to find...");
           // Try to find grocery list
           try {
             const groceryResponse = await fetch(
@@ -82,21 +82,21 @@ export default function PlanDetailPage() {
 
             if (groceryResponse.ok) {
               const groceryData = await groceryResponse.json();
-              console.log("Grocery list response:", groceryData);
+              // console.log("Grocery list response:", groceryData);
 
               if (groceryData.groceryList) {
-                console.log("Found grocery list:", groceryData.groceryList._id);
+                // console.log("Found grocery list:", groceryData.groceryList._id);
                 setGroceryListId(groceryData.groceryList._id);
               } else {
-                console.log("No grocery list found in response");
+                // console.log("No grocery list found in response");
                 setGroceryListId(null);
               }
             } else {
-              console.log("Grocery list fetch failed:", groceryResponse.status);
+              // console.log("Grocery list fetch failed:", groceryResponse.status);
               setGroceryListId(null);
             }
           } catch (error) {
-            console.log("Error finding grocery list:", error);
+            // console.log("Error finding grocery list:", error);
             setGroceryListId(null);
           }
         }

@@ -99,9 +99,9 @@ export default function QuickPlanModal({ isOpen, onClose, planType, locale }) {
 
   const handleSavePlan = async () => {
     try {
-      console.log("=== DEBUG SAVE PLAN ===");
-      console.log("Redux user tier:", user?.tier);
-      console.log("Redux user object:", user);
+      // console.log("=== DEBUG SAVE PLAN ===");
+      // console.log("Redux user tier:", user?.tier);
+      // console.log("Redux user object:", user);
 
       if (!planData || !user) {
         toast.warning("Please login to save plans!");
@@ -252,12 +252,12 @@ export default function QuickPlanModal({ isOpen, onClose, planType, locale }) {
       const used = user.monthly_plan_count || 0;
       const remaining = Math.max(0, limit - used);
 
-      console.log("Monthly stats calculated:", {
-        limit,
-        used,
-        remaining,
-        userTier,
-      });
+      // console.log("Monthly stats calculated:", {
+      //   limit,
+      //   used,
+      //   remaining,
+      //   userTier,
+      // });
 
       setMonthlyStats({ limit, used, remaining });
     }
