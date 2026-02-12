@@ -59,6 +59,7 @@
   },
   "navbar": {
     "home": "Home",
+    "underLogoText": "Meal planning services",
     "howItWorks": "How It Works",
     "pricing": "Pricing",
     "recipes": "Recipes",
