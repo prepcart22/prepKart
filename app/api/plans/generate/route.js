@@ -203,26 +203,26 @@ Return ONLY JSON with this exact format:
       max_output_tokens: 8000,
     });
 
-    console.log(`GPT-5-nano took ${Date.now() - startTime}ms`);
+    // console.log(`GPT-5-nano took ${Date.now() - startTime}ms`);
 
     // DEBUG: Log the actual response structure
-    console.log("DEBUG - Response keys:", Object.keys(response));
-    console.log("DEBUG - Response.text type:", typeof response.text);
-    console.log("DEBUG - Response.text value:", response.text);
+    // console.log("DEBUG - Response keys:", Object.keys(response));
+    // console.log("DEBUG - Response.text type:", typeof response.text);
+    // console.log("DEBUG - Response.text value:", response.text);
 
     let content = "";
 
     // Check if text is a string
     if (response.text && typeof response.text === "string") {
       content = response.text.trim();
-      console.log("Found string in response.text:", content.substring(0, 100));
+      // console.log("Found string in response.text:", content.substring(0, 100));
     }
     // Check if text is an object with string content
     else if (response.text && typeof response.text === "object") {
-      console.log(
-        "response.text is object, checking structure:",
-        response.text,
-      );
+      // console.log(
+      //   "response.text is object, checking structure:",
+      //   response.text,
+      // );
       // Try to extract string from object
       if (Array.isArray(response.text)) {
         // If it's an array, join all string elements
@@ -230,21 +230,21 @@ Return ONLY JSON with this exact format:
           .filter((item) => typeof item === "string")
           .join(" ")
           .trim();
-        console.log("Extracted from text array:", content.substring(0, 100));
+        // console.log("Extracted from text array:", content.substring(0, 100));
       } else if (
         response.text.content &&
         typeof response.text.content === "string"
       ) {
         content = response.text.content.trim();
-        console.log("Found content in text object:", content.substring(0, 100));
+        // console.log("Found content in text object:", content.substring(0, 100));
       }
     }
 
     // Check output array (correct structure)
     if (!content && response.output && Array.isArray(response.output)) {
-      console.log("Checking output array structure...");
+      // console.log("Checking output array structure...");
       for (const item of response.output) {
-        console.log("Output item type:", item.type);
+        // console.log("Output item type:", item.type);
 
         // FIX: GPT-5-nano returns output items with 'text' as string
         if (
@@ -253,7 +253,7 @@ Return ONLY JSON with this exact format:
           typeof item.text === "string"
         ) {
           content = item.text.trim();
-          console.log("Found text in output item:", content.substring(0, 100));
+          // console.log("Found text in output item:", content.substring(0, 100));
           break;
         }
 
@@ -266,10 +266,10 @@ Return ONLY JSON with this exact format:
               typeof contentItem.text === "string"
             ) {
               content = contentItem.text.trim();
-              console.log(
-                "Found text in content array:",
-                content.substring(0, 100),
-              );
+              // console.log(
+              //   "Found text in content array:",
+              //   content.substring(0, 100),
+              // );
               break;
             }
           }
@@ -285,22 +285,22 @@ Return ONLY JSON with this exact format:
       typeof response.output_text === "string"
     ) {
       content = response.output_text.trim();
-      console.log("Found output_text:", content.substring(0, 100));
+      // console.log("Found output_text:", content.substring(0, 100));
     }
 
     if (!content) {
-      console.log("ERROR: No extractable content found");
-      console.log(
-        "Full response structure:",
-        JSON.stringify(response, null, 2).substring(0, 1000),
-      );
+      // console.log("ERROR: No extractable content found");
+      // console.log(
+      //   "Full response structure:",
+      //   JSON.stringify(response, null, 2).substring(0, 1000),
+      // );
       throw new Error("No content in response");
     }
 
-    console.log(
-      "Extracted content (first 200 chars):",
-      content.substring(0, 200),
-    );
+    // console.log(
+    //   "Extracted content (first 200 chars):",
+    //   content.substring(0, 200),
+    // );
 
     // Clean and extract JSON
     content = content.trim();
@@ -317,7 +317,7 @@ Return ONLY JSON with this exact format:
       content = jsonMatch[0];
     }
 
-    console.log("JSON to parse (first 200 chars):", content.substring(0, 200));
+    // console.log("JSON to parse (first 200 chars):", content.substring(0, 200));
 
     // Parse JSON
     let recipeData;
@@ -545,9 +545,9 @@ async function generateHybridMealPlan(inputs, userTier, userInfo) {
   const daysCount = Math.min(parseInt(inputs.days_count) || 3, 7);
   const mealsPerDay = Math.min(parseInt(inputs.meals_per_day) || 1, 4);
 
-  console.log(
-    `Hybrid plan: ${daysCount} days, ${mealsPerDay} meals/day - GENERATING ALL AT ONCE`,
-  );
+  // console.log(
+  //   `Hybrid plan: ${daysCount} days, ${mealsPerDay} meals/day - GENERATING ALL AT ONCE`,
+  // );
 
   // Build ONE prompt for ALL meals
   const prompt = `Generate ${daysCount} vegan lunch recipes for muscle gain.
@@ -575,7 +575,7 @@ Return ONLY JSON array with ${daysCount} recipes in this exact format:
 ]`;
 
   try {
-    console.log("Generating ALL recipes at once with GPT-5-nano...");
+    // console.log("Generating ALL recipes at once with GPT-5-nano...");
     const startTime = Date.now();
 
     const response = await openai.chat.completions.create({
@@ -596,10 +596,10 @@ Return ONLY JSON array with ${daysCount} recipes in this exact format:
       response_format: { type: "json_object" },
     });
 
-    console.log(`BATCH generation took ${Date.now() - startTime}ms`);
+    // console.log(`BATCH generation took ${Date.now() - startTime}ms`);
 
     const content = response.choices[0].message.content;
-    console.log("Raw response length:", content.length);
+    // console.log("Raw response length:", content.length);
 
     // Parse the response
     let recipesData;
@@ -628,7 +628,7 @@ Return ONLY JSON array with ${daysCount} recipes in this exact format:
       throw new Error("No valid recipes generated");
     }
 
-    console.log(`✅ Generated ${recipesData.length} recipes at once`);
+    console.log(`Generated ${recipesData.length} recipes at once`);
 
     // Build days from recipes
     const days = [];

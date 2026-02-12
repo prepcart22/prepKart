@@ -46,21 +46,21 @@ export async function POST(request) {
       }
     }
     
-    console.log('Saving click:', clickData);
+    // console.log('Saving click:', clickData);
     
     // Create new click record
     const click = new Click(clickData);
     
     await click.save();
     
-    console.log('Click saved successfully:', {
-      id: click._id,
-      type: click.type,
-      userTier: click.userTier,
-      userId: click.userId,
-      checkedItemsCount: click.checkedItemsCount,
-      timestamp: click.timestamp
-    });
+    // console.log('Click saved successfully:', {
+    //   id: click._id,
+    //   type: click.type,
+    //   userTier: click.userTier,
+    //   userId: click.userId,
+    //   checkedItemsCount: click.checkedItemsCount,
+    //   timestamp: click.timestamp
+    // });
     
     return NextResponse.json({ 
       success: true, 

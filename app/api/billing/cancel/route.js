@@ -38,9 +38,9 @@ export async function POST(request) {
       );
     }
 
-    console.log(
-      `Cancelling subscription immediately for ${user.email}, tier: ${user.tier}`
-    );
+    // console.log(
+    //   `Cancelling subscription immediately for ${user.email}, tier: ${user.tier}`
+    // );
 
     let stripeResponse = null;
 
@@ -50,17 +50,17 @@ export async function POST(request) {
         user.subscription.stripeSubscriptionId
         // No parameters = cancel immediately
       );
-      console.log("Subscription cancelled immediately in Stripe");
+      // console.log("Subscription cancelled immediately in Stripe");
     } catch (stripeError) {
       console.error("Stripe cancellation error:", stripeError.message);
 
       // If subscription already cancelled in Stripe, just update database
       if (stripeError.code === "resource_missing") {
-        console.log("Subscription already cancelled in Stripe");
+        // console.log("Subscription already cancelled in Stripe");
       } else {
-        console.log(
-          "Could not cancel in Stripe, but updating database to free"
-        );
+        // console.log(
+        //   "Could not cancel in Stripe, but updating database to free"
+        // );
       }
     }
 
@@ -86,7 +86,7 @@ export async function POST(request) {
       tier: user.tier,
     });
 
-    console.log(`User ${user.email} downgraded to Free tier immediately`);
+    // console.log(`User ${user.email} downgraded to Free tier immediately`);
 
     return NextResponse.json({
       success: true,

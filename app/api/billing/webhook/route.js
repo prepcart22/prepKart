@@ -16,7 +16,7 @@ export async function POST(request) {
   for (const [key, value] of request.headers.entries()) {
     headers[key] = value;
   }
-  console.log("Headers:", JSON.stringify(headers, null, 2));
+  // console.log("Headers:", JSON.stringify(headers, null, 2));
 
   try {
     // Get raw body
@@ -41,12 +41,12 @@ export async function POST(request) {
       );
     }
 
-    console.log("Webhook secret configured");
+    // console.log("Webhook secret configured");
 
     let event;
     try {
       event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
-      console.log("Event verified:", event.type, event.id);
+      // console.log("Event verified:", event.type, event.id);
     } catch (err) {
       console.error("SIGNATURE VERIFICATION FAILED:", err.message);
       return NextResponse.json(
@@ -91,7 +91,7 @@ export async function POST(request) {
         break;
 
       default:
-        console.log(`ℹ Unhandled event type: ${event.type}`);
+        // console.log(` Unhandled event type: ${event.type}`);
     }
 
     console.log("Webhook processed successfully");
@@ -135,7 +135,7 @@ async function handleCheckoutSessionCompleted(session) {
       const subscription = await stripe.subscriptions.retrieve(
         session.subscription,
       );
-      console.log("subscription", subscription);
+      // console.log("subscription", subscription);
       // Set startedAt from subscription creation
       if (subscription.created) {
         const timestamp = subscription.created * 1000;
@@ -150,7 +150,7 @@ async function handleCheckoutSessionCompleted(session) {
         const timestamp = subscription.current_period_end * 1000;
         if (!isNaN(timestamp) && timestamp > 0) {
           periodEnd = new Date(timestamp);
-          console.log("Subscription period end:", periodEnd.toISOString());
+          // console.log("Subscription period end:", periodEnd.toISOString());
         } else {
           console.warn(
             "Invalid subscription timestamp:",
@@ -168,7 +168,7 @@ async function handleCheckoutSessionCompleted(session) {
       });
 
       const invoice = invoices.data[0];
-      console.log("invoice", invoice);
+      // console.log("invoice", invoice);
       if (invoice) {
         lastInvoice = {
           invoiceId: invoice.id,
@@ -178,7 +178,7 @@ async function handleCheckoutSessionCompleted(session) {
           currency: invoice.currency,
           paidAt: new Date(invoice.created * 1000),
         };
-        console.log("Last invoice retrieved:", invoice.id);
+        // console.log("Last invoice retrieved:", invoice.id);
       }
     } catch (error) {
       console.error("Failed to retrieve subscription:", error.message);
@@ -201,7 +201,7 @@ async function handleCheckoutSessionCompleted(session) {
   const tier = session.metadata?.tier || "tier2";
   const swapsAllowed = tier === "tier2" ? 2 : 3;
 
-  console.log(`Updating user ${userId} to ${tier} with ${swapsAllowed} swaps`);
+  // console.log(`Updating user ${userId} to ${tier} with ${swapsAllowed} swaps`);
 
   // Ensure currentPeriodEnd is a valid Date
   const updateDoc = {
@@ -221,7 +221,7 @@ async function handleCheckoutSessionCompleted(session) {
     },
   };
 
-  console.log("Update document:", JSON.stringify(updateDoc, null, 2));
+  // console.log("Update document:", JSON.stringify(updateDoc, null, 2));
   if (lastInvoice) {
     updateDoc.subscription.lastInvoice = {
       invoiceId: lastInvoice.invoiceId,
@@ -233,7 +233,7 @@ async function handleCheckoutSessionCompleted(session) {
     };
   }
 
-  console.log("Update document:", JSON.stringify(updateDoc, null, 2));
+  // console.log("Update document:", JSON.stringify(updateDoc, null, 2));
 
   const result = await User.findByIdAndUpdate(
     userId,
@@ -262,7 +262,7 @@ async function handleCheckoutSessionCompleted(session) {
         price,
       });
 
-      console.log("Subscription email sent to:", result.email);
+      // console.log("Subscription email sent to:", result.email);
 
       // send email to admin
       await sendAdminNotification(result, tier, price);
@@ -413,7 +413,7 @@ async function handleSubscriptionUpdated(subscription) {
   }
 
   await User.findByIdAndUpdate(user._id, { $set: updates });
-  console.log(`Updated ${user.email} subscription to ${subscription.status}`);
+  // console.log(`Updated ${user.email} subscription to ${subscription.status}`);
 }
 async function handleSubscriptionDeleted(subscription) {
   console.log("Handling subscription deletion");
@@ -446,9 +446,9 @@ async function handleSubscriptionDeleted(subscription) {
   }
 }
 async function handleInvoicePaid(invoice) {
-  console.log("Handling invoice.paid event");
-  console.log("Invoice ID:", invoice.id);
-  console.log("Billing reason:", invoice.billing_reason);
+  // console.log("Handling invoice.paid event");
+  // console.log("Invoice ID:", invoice.id);
+  // console.log("Billing reason:", invoice.billing_reason);
 
   if (!invoice.subscription) {
     console.log("No subscription in invoice, skipping");
@@ -491,7 +491,7 @@ async function handleInvoicePaid(invoice) {
       { new: true },
     );
 
-    console.log(`Invoice ${invoice.id} saved for user ${user.email}`);
+    // console.log(`Invoice ${invoice.id} saved for user ${user.email}`);
 
     // If this is the first invoice, also set startedAt
     if (invoice.billing_reason === "subscription_create") {
@@ -506,7 +506,7 @@ async function handleInvoicePaid(invoice) {
             "subscription.startedAt": startedAt,
           },
         });
-        console.log("StartedAt set to:", startedAt.toISOString());
+        // console.log("StartedAt set to:", startedAt.toISOString());
       }
     }
   } catch (error) {
