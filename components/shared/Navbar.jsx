@@ -243,7 +243,7 @@ export default function Navbar() {
               </>
             )}
           </div>
-          <div className='flex gap-x-2'>
+          <div className='flex gap-x-2 text-gray-800'>
             <Link
               href={createLocalizedPath("en")}
               className={currentLocale === "en" ? "font-bold" : ""}>
