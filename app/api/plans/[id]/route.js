@@ -9,7 +9,7 @@ export async function GET(request, { params }) {
 
     const { id } = await params;
 
-    console.log("Fetching plan with ID:", id);
+    // console.log("Fetching plan with ID:", id);
 
     const plan = await Plan.findById(id).lean();
 
@@ -32,15 +32,15 @@ export async function DELETE(request, { params }) {
     await connectDB();
 
     const { id } = await params;
-    console.log("🚀 DELETE request for plan ID:", id);
+    // console.log("DELETE request for plan ID:", id);
 
     // 1. AUTHENTICATION CHECK
     const authResult = await authenticate(request);
-    console.log("🔐 Authentication result:", {
-      success: authResult.success,
-      userId: authResult.userId,
-      userEmail: authResult.userEmail,
-    });
+    // console.log("Authentication result:", {
+    //   success: authResult.success,
+    //   userId: authResult.userId,
+    //   userEmail: authResult.userEmail,
+    // });
 
     if (!authResult.success) {
       return NextResponse.json(
@@ -50,7 +50,7 @@ export async function DELETE(request, { params }) {
     }
 
     const userId = authResult.userId;
-    console.log("Authenticated user ID:", userId);
+    // console.log("Authenticated user ID:", userId);
 
     // 2. Find the plan
     const plan = await Plan.findById(id);
@@ -62,25 +62,25 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    console.log("📋 Plan found:", {
-      planId: plan._id,
-      planUserId: plan.userId,
-      planUserEmail: plan.userEmail,
-    });
+    // console.log("Plan found:", {
+    //   planId: plan._id,
+    //   planUserId: plan.userId,
+    //   planUserEmail: plan.userEmail,
+    // });
 
     // 3. Check if user owns the plan - FIXED COMPARISON
     // Convert both to strings for comparison
     const planUserIdStr = plan.userId.toString();
     const requestUserIdStr = userId.toString();
 
-    console.log("🔍 Comparing IDs:");
-    console.log("   Plan user ID:", planUserIdStr);
-    console.log("   Request user ID:", requestUserIdStr);
-    console.log("   Match?", planUserIdStr === requestUserIdStr);
+    // console.log("Comparing IDs:");
+    // console.log("   Plan user ID:", planUserIdStr);
+    // console.log("   Request user ID:", requestUserIdStr);
+    // console.log("   Match?", planUserIdStr === requestUserIdStr);
 
     // FIX: Use equality operator, not assignment
     if (planUserIdStr !== requestUserIdStr) {
-      console.log("❌ Permission denied - User doesn't own this plan");
+      // console.log("Permission denied - User doesn't own this plan");
       return NextResponse.json(
         { error: "You don't have permission to delete this plan" },
         { status: 403 },
@@ -90,14 +90,14 @@ export async function DELETE(request, { params }) {
     // 4. Delete the plan
     await Plan.findByIdAndDelete(id);
 
-    console.log("✅ Plan deleted successfully");
+    console.log("Plan deleted successfully");
 
     return NextResponse.json({
       success: true,
       message: "Meal plan deleted successfully",
     });
   } catch (error) {
-    console.error("❌ Delete error:", error);
+    console.error("Delete error:", error);
     return NextResponse.json(
       {
         error: "Failed to delete meal plan",

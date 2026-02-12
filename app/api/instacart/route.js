@@ -43,10 +43,10 @@ async function trackInstacartClick(trackingData) {
     }
 
     const result = await response.json();
-    console.log(
-      "Click tracked via API:",
-      result.success ? "Success" : "Failed",
-    );
+    // console.log(
+    //   "Click tracked via API:",
+    //   result.success ? "Success" : "Failed",
+    // );
     return result;
   } catch (error) {
     console.error("Click tracking error:", error);
@@ -72,7 +72,7 @@ export async function POST(request) {
       );
     }
 
-    console.log("Received items:", groceryItems.length, "User tier:", userTier);
+    // console.log("Received items:", groceryItems.length, "User tier:", userTier);
 
     // Filter checked items
     const checkedItems = groceryItems.filter((item) => item.checked !== false);
@@ -87,7 +87,7 @@ export async function POST(request) {
       );
     }
 
-    console.log(`Creating shopping list with ${checkedItems.length} items`);
+    // console.log(`Creating shopping list with ${checkedItems.length} items`);
 
     // Get credentials
     const INSTACART_API_KEY = process.env.INSTACART_API_KEY;
@@ -152,7 +152,7 @@ export async function POST(request) {
       },
     );
 
-    console.log("Response status:", response.status);
+    // console.log("Response status:", response.status);
 
     const responseText = await response.text();
 
@@ -207,9 +207,9 @@ export async function POST(request) {
 
       shoppingListUrl = urlObj.toString();
 
-      console.log("Affiliate-tracked URL:", shoppingListUrl);
+      // console.log("Affiliate-tracked URL:", shoppingListUrl);
     }
-    console.log("Shopping list created:", shoppingListUrl);
+    // console.log("Shopping list created:", shoppingListUrl);
 
     // ===== TRACK THIS CLICK =====
     const trackingResult = await trackInstacartClick({
@@ -228,10 +228,10 @@ export async function POST(request) {
       },
     });
 
-    console.log(
-      "Tracking result:",
-      trackingResult.success ? "✅ Tracked" : "❌ Failed",
-    );
+    // console.log(
+    //   "Tracking result:",
+    //   trackingResult.success ? "✅ Tracked" : "❌ Failed",
+    // );
 
     return NextResponse.json({
       success: true,

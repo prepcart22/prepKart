@@ -220,7 +220,7 @@ export async function POST(request) {
       impactId,
     );
 
-    console.log("Instacart link generated:", instacartLink);
+    // console.log("Instacart link generated:", instacartLink);
 
     // Update grocery list with Instacart link
     await GroceryList.findByIdAndUpdate(groceryList._id, {

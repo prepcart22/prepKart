@@ -60,8 +60,8 @@ export async function GET(request) {
       const plans = await Plan.find({ userId: userId }).lean();
 
       // Debug logging
-      console.log(`User ${authResult.userId} requesting plans for ${userId}`);
-      console.log(`Found ${plans.length} plans`);
+      // console.log(`User ${authResult.userId} requesting plans for ${userId}`);
+      // console.log(`Found ${plans.length} plans`);
 
       return NextResponse.json(plans);
     }

@@ -178,9 +178,9 @@ export async function POST(request) {
         const monthlyLimit = MONTHLY_PLAN_LIMITS[userTier] || 1;
         const planCountThisMonth = user.monthly_plan_count || 0;
 
-        console.log(
-          `User ${userId} (${userTier}): ${planCountThisMonth}/${monthlyLimit} plans used`,
-        );
+        // console.log(
+        //   `User ${userId} (${userTier}): ${planCountThisMonth}/${monthlyLimit} plans used`,
+        // );
 
         if (planCountThisMonth >= monthlyLimit) {
           return NextResponse.json(
@@ -220,9 +220,9 @@ export async function POST(request) {
       daysCount: daysCount,
     };
 
-    console.log(
-      `Generating ${daysCount}-day ${planType} plan for user ${userId || "guest"}`,
-    );
+    // console.log(
+    //   `Generating ${daysCount}-day ${planType} plan for user ${userId || "guest"}`,
+    // );
 
     let planData;
     // Generate based on user tier

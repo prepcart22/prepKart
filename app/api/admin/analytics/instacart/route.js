@@ -43,7 +43,7 @@ export async function GET(request) {
         timestamp: { $gte: startDate, $lte: endDate }
       }).sort({ timestamp: 1 });
       
-      console.log(`Found ${clicks.length} clicks for range: ${range}`);
+      // console.log(`Found ${clicks.length} clicks for range: ${range}`);
       
       // Calculate summary statistics
       const totalClicks = clicks.length;
@@ -59,7 +59,7 @@ export async function GET(request) {
       
       // Generate hourly data (for today view)
       if (range === 'today') {
-        console.log('Generating hourly data for today...');
+        // console.log('Generating hourly data for today...');
         const currentHour = new Date().getHours();
         const hoursMap = {};
         
@@ -88,7 +88,7 @@ export async function GET(request) {
         
         // Convert to array and keep only hours up to current hour
         hourlyData = Object.values(hoursMap).slice(0, currentHour + 1);
-        console.log(`Hourly data generated: ${hourlyData.length} hours`);
+        // console.log(`Hourly data generated: ${hourlyData.length} hours`);
       }
       
       // Generate daily data (for 7 days and 30 days views)
@@ -190,12 +190,12 @@ export async function GET(request) {
         }
       };
       
-      console.log('Response data prepared:', {
-        totalClicks,
-        hourlyDataLength: hourlyData.length,
-        dailyDataLength: dailyData.length,
-        monthlyDataLength: monthlyData.length
-      });
+      // console.log('Response data prepared:', {
+      //   totalClicks,
+      //   hourlyDataLength: hourlyData.length,
+      //   dailyDataLength: dailyData.length,
+      //   monthlyDataLength: monthlyData.length
+      // });
       
       return NextResponse.json(responseData);
       

@@ -18,12 +18,12 @@ export async function GET(request) {
 
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
-    console.log("Session status:", {
-      id: session.id,
-      payment_status: session.payment_status,
-      status: session.status,
-      userId: session.metadata?.userId,
-    });
+    // console.log("Session status:", {
+    //   id: session.id,
+    //   payment_status: session.payment_status,
+    //   status: session.status,
+    //   userId: session.metadata?.userId,
+    // });
 
     if (session.payment_status !== "paid") {
       console.log("Payment not paid, redirecting to pricing");

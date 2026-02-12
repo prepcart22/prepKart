@@ -90,7 +90,7 @@ export async function PATCH(request, { params }) {
     const { id } = await params;
     const body = await request.json();
 
-    console.log("PATCH request for:", id, "Items:", body.items?.length || 0);
+    // console.log("PATCH request for:", id, "Items:", body.items?.length || 0);
 
     // Find the grocery list
     const existingList = await GroceryList.findById(id);
@@ -142,12 +142,12 @@ export async function PATCH(request, { params }) {
 
       const checkedCount = finalItems.filter(item => item.checked).length;
 
-      console.log("Replacing items:", {
-        oldItemCount: existingList.items.length,
-        newItemCount: finalItems.length,
-        itemsDeleted: existingList.items.length - finalItems.length,
-        checkedCount
-      });
+      // console.log("Replacing items:", {
+      //   oldItemCount: existingList.items.length,
+      //   newItemCount: finalItems.length,
+      //   itemsDeleted: existingList.items.length - finalItems.length,
+      //   checkedCount
+      // });
 
       // COMPLETELY REPLACE the items array
       const updatedList = await GroceryList.findByIdAndUpdate(

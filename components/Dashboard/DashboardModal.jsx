@@ -1647,7 +1647,7 @@ export default function DashboardModal({ isOpen, onClose, locale }) {
         );
       case "Meal Plans":
       default:
-        console.log("Saved meal plans", savedMealPlans);
+        // console.log("Saved meal plans", savedMealPlans);
 
         const quickSavedPlans = savedMealPlans.filter(
           (plan) => plan.isSaved === true && plan.isQuickPlan === true,
@@ -1658,8 +1658,8 @@ export default function DashboardModal({ isOpen, onClose, locale }) {
         );
 
         // Debug logging
-        console.log("Dashboard - Quick Plans:", quickSavedPlans);
-        console.log("Dashboard - Regular Plans:", regularSavedPlans);
+        // console.log("Dashboard - Quick Plans:", quickSavedPlans);
+        // console.log("Dashboard - Regular Plans:", regularSavedPlans);
 
         return (
           <>
