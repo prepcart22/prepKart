@@ -57,8 +57,8 @@ export default function PlanDetailPage() {
         }
 
         const planData = await planResponse.json();
-        // console.log("Plan data:", planData); 
-        // console.log("Plan groceryListId:", planData.groceryListId); 
+        // console.log("Plan data:", planData);
+        // console.log("Plan groceryListId:", planData.groceryListId);
 
         setPlan(planData);
 
@@ -449,7 +449,7 @@ export default function PlanDetailPage() {
                         {/* Meal Header with View More button */}
                         <div className='flex items-start justify-between mb-4'>
                           <div>
-                            <span className='inline-block px-3 py-1 bg-[#8cc63c]/10 text-[#8cc63c] rounded-full text-sm font-medium mb-2'>
+                            <span className='inline-block px-3 py-1 bg-green-50 text-green-700 uppercase rounded-full text-sm font-medium mb-2'>
                               {meal.mealType}
                             </span>
                             <h3 className='text-lg font-semibold text-gray-900'>
@@ -465,7 +465,7 @@ export default function PlanDetailPage() {
                             </p> */}
                             <button
                               onClick={() => toggleCardExpansion(mealKey)}
-                              className='mt-2 text-xs text-[#8cc63c] hover:text-[#7ab32f] flex items-center gap-1'>
+                              className='mt-2 text-sm text-green-600 hover:text-[#7ab32f] flex items-center gap-1'>
                               {isExpanded ? "View Less" : "View More"}
                               {isExpanded ? (
                                 <ChevronUp className='w-3 h-3' />
