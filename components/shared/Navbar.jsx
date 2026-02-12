@@ -291,6 +291,7 @@ export default function Navbar() {
             </button>
           )}
         </div>
+
         {/* MENU BUTTON */}
         <div className='flex items-center gap-4'>
           {open ? (
@@ -305,18 +306,6 @@ export default function Navbar() {
             />
           )}
         </div>
-        {/* <div className='flex gap-x-2 -mr-28 text-sm'>
-          <Link
-            href={createLocalizedPath("en")}
-            className={currentLocale === "en" ? "font-bold" : ""}>
-            EN
-          </Link>
-          <Link
-            href={createLocalizedPath("fr")}
-            className={currentLocale === "fr" ? "font-bold" : ""}>
-            FR
-          </Link>
-        </div> */}
       </div>
 
       {/* ---------------- MOBILE MENU DROPDOWN ---------------- */}
@@ -324,6 +313,18 @@ export default function Navbar() {
         <div className='lg:hidden bg-white px-4 sm:px-6 md:px-8 pb-5 border-t animate-slideDown'>
           {/* MENU ITEMS */}
           <div className='flex flex-col gap-3 sm:gap-4 mt-4'>
+            <div className='flex gap-x-2 text-sm text-center justify-center text-gray-800'>
+              <Link
+                href={createLocalizedPath("en")}
+                className={currentLocale === "en" ? "font-bold" : ""}>
+                EN
+              </Link>
+              <Link
+                href={createLocalizedPath("fr")}
+                className={currentLocale === "fr" ? "font-bold" : ""}>
+                FR
+              </Link>
+            </div>
             {navItems.map((item) => {
               const isActive = isItemActive(item.href);
 
