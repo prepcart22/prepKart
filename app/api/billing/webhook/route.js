@@ -10,6 +10,28 @@ import {
   sendAdminNotification,
 } from "@/lib/email";
 
+const EMAIL_TIMEOUT_MS = 4000;
+
+function withTimeout(promise, timeoutMs, label) {
+  let timeoutId;
+
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    clearTimeout(timeoutId);
+  });
+}
+
+function runEmailTask(task, label) {
+  void withTimeout(task(), EMAIL_TIMEOUT_MS, label).catch((error) => {
+    console.error(`${label} failed:`, error.message);
+  });
+}
+
 export async function POST(request) {
   // Log headers
   const headers = {};
@@ -91,7 +113,7 @@ export async function POST(request) {
         break;
 
       default:
-        // console.log(` Unhandled event type: ${event.type}`);
+      // console.log(` Unhandled event type: ${event.type}`);
     }
 
     console.log("Webhook processed successfully");
@@ -248,29 +270,24 @@ async function handleCheckoutSessionCompleted(session) {
   console.log("User updated successfully");
   // After successful update, send email
   if (result) {
-    console.log("User updated successfully");
-
     // Send subscription email
-    try {
-      const tier = session.metadata?.tier || "tier2";
-      const price = tier === "tier2" ? 4.99 : 9.99;
+    const tier = session.metadata?.tier || "tier2";
+    const price = tier === "tier2" ? 4.99 : 9.99;
 
-      // send email to user
-      await sendNewSubscriptionEmail(result, {
-        tier,
-        currentPeriodEnd: periodEnd,
-        price,
-      });
+    runEmailTask(
+      () =>
+        sendNewSubscriptionEmail(result, {
+          tier,
+          currentPeriodEnd: periodEnd,
+          price,
+        }),
+      "sendNewSubscriptionEmail",
+    );
 
-      // console.log("Subscription email sent to:", result.email);
-
-      // send email to admin
-      await sendAdminNotification(result, tier, price);
-      console.log("Admin notification sent");
-    } catch (emailError) {
-      console.error("Failed to send subscription email:", emailError.message);
-      // Don't fail the webhook if email fails
-    }
+    runEmailTask(
+      () => sendAdminNotification(result, tier, price),
+      "sendAdminNotification",
+    );
   }
 }
 
@@ -327,15 +344,14 @@ async function handleInvoicePaymentSucceeded(invoice) {
         );
 
         // Send renewal email
-        try {
-          await sendRenewalEmail(user, {
-            tier: user.tier,
-            currentPeriodEnd: periodEnd,
-          });
-          console.log(`Renewal email sent to ${user.email}`);
-        } catch (emailError) {
-          console.error("Failed to send renewal email:", emailError.message);
-        }
+        runEmailTask(
+          () =>
+            sendRenewalEmail(user, {
+              tier: user.tier,
+              currentPeriodEnd: periodEnd,
+            }),
+          "sendRenewalEmail",
+        );
       } else {
         console.error("User not found for subscription:", invoice.subscription);
       }
@@ -363,15 +379,10 @@ async function handleInvoicePaymentFailed(invoice) {
       console.log(`Payment failed for ${user.email}`);
 
       // Send payment failed email
-      try {
-        await sendPaymentFailedEmail(user, invoice);
-        console.log("Payment failed email sent to:", user.email);
-      } catch (emailError) {
-        console.error(
-          "Failed to send payment failed email:",
-          emailError.message,
-        );
-      }
+      runEmailTask(
+        () => sendPaymentFailedEmail(user, invoice),
+        "sendPaymentFailedEmail",
+      );
     }
   }
 }
@@ -437,12 +448,10 @@ async function handleSubscriptionDeleted(subscription) {
     console.log("User downgraded to free tier");
 
     // Send cancellation email
-    try {
-      await sendCancellationEmail(user, { tier: user.tier });
-      console.log("Cancellation email sent to:", user.email);
-    } catch (emailError) {
-      console.error("Failed to send cancellation email:", emailError.message);
-    }
+    runEmailTask(
+      () => sendCancellationEmail(user, { tier: user.tier }),
+      "sendCancellationEmail",
+    );
   }
 }
 async function handleInvoicePaid(invoice) {
