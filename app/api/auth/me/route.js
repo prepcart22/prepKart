@@ -1,6 +1,7 @@
 import { verifyAccessToken } from "@/lib/jwt";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
+import mongoose from "mongoose";
 
 export async function GET(request) {
   try {
@@ -14,7 +15,7 @@ export async function GET(request) {
           error: "Not authenticated",
           message: "No authentication token found",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -22,22 +23,22 @@ export async function GET(request) {
 
     // Verify token
     const decoded = verifyAccessToken(token);
-    if (!decoded) {
+    const userId = decoded?.userId || decoded?.id;
+
+    if (!decoded || !userId || !mongoose.Types.ObjectId.isValid(userId)) {
       return Response.json(
         {
           success: false,
           error: "Invalid or expired token",
           message: "Please login again",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     // Connect to DB and get user
     await connectDB();
-    const user = await User.findById(decoded.userId).select(
-      "-password -refreshToken"
-    );
+    const user = await User.findById(userId).select("-password -refreshToken");
 
     if (!user) {
       return Response.json(
@@ -45,7 +46,7 @@ export async function GET(request) {
           success: false,
           error: "User not found",
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -80,7 +81,7 @@ export async function GET(request) {
         success: false,
         error: "Failed to get user data: " + error.message,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
