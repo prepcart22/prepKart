@@ -12,7 +12,7 @@ export async function POST(request) {
     if (!email) {
       return Response.json(
         { success: false, error: "Email is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -43,9 +43,21 @@ export async function POST(request) {
     await user.save({ validateBeforeSave: false });
 
     // Send email
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${locale}/reset-password?token=${resetToken}`;
+    const emailResult = await sendPasswordResetEmail(
+      user.email,
+      resetToken,
+      user,
+      locale,
+      request.nextUrl.origin,
+    );
 
-    await sendPasswordResetEmail(user.email, resetToken, user, locale);
+    if (!emailResult) {
+      return Response.json({
+        success: true,
+        message:
+          "If your email exists in our system, you will receive a password reset link.",
+      });
+    }
 
     return Response.json({
       success: true,
@@ -58,7 +70,7 @@ export async function POST(request) {
         success: false,
         error: "Failed to process password reset request",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
