@@ -12,6 +12,7 @@
     "@formatjs/intl-localematcher": "^0.7.2",
     "@reduxjs/toolkit": "^2.11.1",
     "@stripe/stripe-js": "^8.5.3",
+    "@tailwindcss/postcss": "^4",
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.8.0",
@@ -32,12 +33,11 @@
     "react-redux": "^9.2.0",
     "react-toastify": "^11.0.5",
     "recharts": "^3.6.0",
-    "stripe": "^20.1.2"
+    "stripe": "^20.1.2",
+    "tailwindcss": "^4"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
     "eslint": "^9",
-    "eslint-config-next": "16.0.7",
-    "tailwindcss": "^4"
+    "eslint-config-next": "16.0.7"
   }
 }
