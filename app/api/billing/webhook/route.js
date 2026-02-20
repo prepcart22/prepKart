@@ -10,7 +10,41 @@ import {
   sendAdminNotification,
 } from "@/lib/email";
 
+const EMAIL_TIMEOUT_MS = 4000;
+const DB_TIMEOUT_MS = 2000;
+const EVENT_TIMEOUT_MS = 4000;
+const PROCESS_TIMEOUT_MS = 6000;
+
+function withTimeout(promise, timeoutMs, label) {
+  let timeoutId;
+
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    clearTimeout(timeoutId);
+  });
+}
+
+function runEmailTask(task, label) {
+  void withTimeout(Promise.resolve().then(task), EMAIL_TIMEOUT_MS, label).catch(
+    (error) => {
+      console.error(`${label} failed:`, error.message);
+    },
+  );
+}
+
+function logStage(tag, stage, startMs) {
+  console.log(`[StripeWebhook] ${tag} ${stage} in ${Date.now() - startMs}ms`);
+}
+
 export async function POST(request) {
+  const requestStartMs = Date.now();
+  let webhookTag = "unknown-event";
+
   // Log headers
   const headers = {};
   for (const [key, value] of request.headers.entries()) {
@@ -44,8 +78,11 @@ export async function POST(request) {
     // console.log("Webhook secret configured");
 
     let event;
+    const verifyStartMs = Date.now();
     try {
       event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+      webhookTag = `${event.type}:${event.id}`;
+      logStage(webhookTag, "signature_verified", verifyStartMs);
       // console.log("Event verified:", event.type, event.id);
     } catch (err) {
       console.error("SIGNATURE VERIFICATION FAILED:", err.message);
@@ -55,49 +92,94 @@ export async function POST(request) {
       );
     }
 
-    // Connect to DB
+    let processed = true;
+
     try {
-      await connectDB();
-      console.log("Database connected");
-    } catch (dbError) {
-      console.error("Database connection failed:", dbError.message);
-      throw dbError;
+      await withTimeout(
+        (async () => {
+          const dbStartMs = Date.now();
+          await withTimeout(connectDB(), DB_TIMEOUT_MS, "connectDB");
+          logStage(webhookTag, "db_connected", dbStartMs);
+
+          // Handle different event types
+          const handlerStartMs = Date.now();
+          switch (event.type) {
+            case "checkout.session.completed":
+              await withTimeout(
+                handleCheckoutSessionCompleted(event.data.object),
+                EVENT_TIMEOUT_MS,
+                "checkout.session.completed",
+              );
+              break;
+
+            case "invoice.payment_succeeded":
+              await withTimeout(
+                handleInvoicePaymentSucceeded(event.data.object),
+                EVENT_TIMEOUT_MS,
+                "invoice.payment_succeeded",
+              );
+              break;
+
+            case "invoice.paid":
+              await withTimeout(
+                handleInvoicePaid(event.data.object),
+                EVENT_TIMEOUT_MS,
+                "invoice.paid",
+              );
+              break;
+
+            case "customer.subscription.updated":
+              await withTimeout(
+                handleSubscriptionUpdated(event.data.object),
+                EVENT_TIMEOUT_MS,
+                "customer.subscription.updated",
+              );
+              break;
+
+            case "customer.subscription.deleted":
+              await withTimeout(
+                handleSubscriptionDeleted(event.data.object),
+                EVENT_TIMEOUT_MS,
+                "customer.subscription.deleted",
+              );
+              break;
+
+            case "invoice.payment_failed":
+              await withTimeout(
+                handleInvoicePaymentFailed(event.data.object),
+                EVENT_TIMEOUT_MS,
+                "invoice.payment_failed",
+              );
+              break;
+
+            default:
+            // console.log(` Unhandled event type: ${event.type}`);
+          }
+          logStage(webhookTag, "event_handled", handlerStartMs);
+        })(),
+        PROCESS_TIMEOUT_MS,
+        "process_event",
+      );
+
+      logStage(webhookTag, "request_complete", requestStartMs);
+    } catch (processingError) {
+      processed = false;
+      console.error(
+        `[StripeWebhook] ${webhookTag} WEBHOOK PROCESSING ERROR (acknowledged to Stripe):`,
+      );
+      console.error("Message:", processingError.message);
+      console.error("Stack:", processingError.stack);
     }
 
-    // Handle different event types
-    switch (event.type) {
-      case "checkout.session.completed":
-        await handleCheckoutSessionCompleted(event.data.object);
-        break;
-
-      case "invoice.payment_succeeded":
-        await handleInvoicePaymentSucceeded(event.data.object);
-        break;
-
-      case "invoice.paid":
-        await handleInvoicePaid(event.data.object);
-        break;
-
-      case "customer.subscription.updated":
-        await handleSubscriptionUpdated(event.data.object);
-        break;
-
-      case "customer.subscription.deleted":
-        await handleSubscriptionDeleted(event.data.object);
-        break;
-
-      case "invoice.payment_failed":
-        await handleInvoicePaymentFailed(event.data.object);
-        break;
-
-      default:
-        // console.log(` Unhandled event type: ${event.type}`);
-    }
-
-    console.log("Webhook processed successfully");
-    return NextResponse.json({ received: true });
+    // Always acknowledge verified Stripe events to avoid delivery failures/retries
+    return NextResponse.json({
+      received: true,
+      processed,
+      eventId: event.id,
+      eventType: event.type,
+    });
   } catch (error) {
-    console.error("WEBHOOK PROCESSING ERROR:");
+    console.error(`[StripeWebhook] ${webhookTag} WEBHOOK PROCESSING ERROR:`);
     console.error("Message:", error.message);
     console.error("Stack:", error.stack);
 
@@ -122,68 +204,24 @@ async function handleCheckoutSessionCompleted(session) {
 
   const userId = session.metadata?.userId;
   if (!userId) {
-    throw new Error("No userId in session metadata");
+    console.error("No userId in session metadata");
+    return;
   }
 
-  // Get subscription details with proper error handling
+  // Keep this path fast: avoid extra Stripe API calls inside webhook request
   let periodEnd = new Date(Date.now() + 31 * 24 * 60 * 60 * 1000); // Default 30 days
   let startedAt = new Date(); // Default to now
   let lastInvoice = null;
 
-  if (session.subscription) {
-    try {
-      const subscription = await stripe.subscriptions.retrieve(
-        session.subscription,
-      );
-      // console.log("subscription", subscription);
-      // Set startedAt from subscription creation
-      if (subscription.created) {
-        const timestamp = subscription.created * 1000;
-        if (!isNaN(timestamp) && timestamp > 0) {
-          startedAt = new Date(timestamp);
-          console.log("Subscription started at:", startedAt.toISOString());
-        }
-      }
-
-      // Validate the timestamp before creating Date
-      if (subscription.current_period_end) {
-        const timestamp = subscription.current_period_end * 1000;
-        if (!isNaN(timestamp) && timestamp > 0) {
-          periodEnd = new Date(timestamp);
-          // console.log("Subscription period end:", periodEnd.toISOString());
-        } else {
-          console.warn(
-            "Invalid subscription timestamp:",
-            subscription.current_period_end,
-          );
-        }
-      } else {
-        console.warn("No current_period_end in subscription");
-      }
-
-      // Get last invoice
-      const invoices = await stripe.invoices.list({
-        subscription: session.subscription, // Changed from customer to subscription
-        limit: 1,
-      });
-
-      const invoice = invoices.data[0];
-      // console.log("invoice", invoice);
-      if (invoice) {
-        lastInvoice = {
-          invoiceId: invoice.id,
-          invoicePdf: invoice.invoice_pdf,
-          hostedInvoiceUrl: invoice.hosted_invoice_url,
-          amountPaid: invoice.amount_paid,
-          currency: invoice.currency,
-          paidAt: new Date(invoice.created * 1000),
-        };
-        // console.log("Last invoice retrieved:", invoice.id);
-      }
-    } catch (error) {
-      console.error("Failed to retrieve subscription:", error.message);
-      // Keep default periodEnd
-    }
+  if (session.invoice) {
+    lastInvoice = {
+      invoiceId: session.invoice,
+      invoicePdf: null,
+      hostedInvoiceUrl: null,
+      amountPaid: session.amount_total ?? null,
+      currency: session.currency ?? null,
+      paidAt: session.created ? new Date(session.created * 1000) : new Date(),
+    };
   }
 
   // Validate periodEnd is a valid Date
@@ -235,42 +273,42 @@ async function handleCheckoutSessionCompleted(session) {
 
   // console.log("Update document:", JSON.stringify(updateDoc, null, 2));
 
-  const result = await User.findByIdAndUpdate(
-    userId,
-    { $set: updateDoc },
-    { new: true, runValidators: true },
+  const result = await withTimeout(
+    User.findByIdAndUpdate(
+      userId,
+      { $set: updateDoc },
+      { new: true, runValidators: true },
+    ),
+    DB_TIMEOUT_MS,
+    "User.findByIdAndUpdate checkout",
   );
 
   if (!result) {
-    throw new Error(`User ${userId} not found`);
+    console.error(`User ${userId} not found`);
+    return;
   }
 
   console.log("User updated successfully");
   // After successful update, send email
   if (result) {
-    console.log("User updated successfully");
-
     // Send subscription email
-    try {
-      const tier = session.metadata?.tier || "tier2";
-      const price = tier === "tier2" ? 4.99 : 9.99;
+    const tier = session.metadata?.tier || "tier2";
+    const price = tier === "tier2" ? 4.99 : 9.99;
 
-      // send email to user
-      await sendNewSubscriptionEmail(result, {
-        tier,
-        currentPeriodEnd: periodEnd,
-        price,
-      });
+    runEmailTask(
+      () =>
+        sendNewSubscriptionEmail(result, {
+          tier,
+          currentPeriodEnd: periodEnd,
+          price,
+        }),
+      "sendNewSubscriptionEmail",
+    );
 
-      // console.log("Subscription email sent to:", result.email);
-
-      // send email to admin
-      await sendAdminNotification(result, tier, price);
-      console.log("Admin notification sent");
-    } catch (emailError) {
-      console.error("Failed to send subscription email:", emailError.message);
-      // Don't fail the webhook if email fails
-    }
+    runEmailTask(
+      () => sendAdminNotification(result, tier, price),
+      "sendAdminNotification",
+    );
   }
 }
 
@@ -327,21 +365,19 @@ async function handleInvoicePaymentSucceeded(invoice) {
         );
 
         // Send renewal email
-        try {
-          await sendRenewalEmail(user, {
-            tier: user.tier,
-            currentPeriodEnd: periodEnd,
-          });
-          console.log(`Renewal email sent to ${user.email}`);
-        } catch (emailError) {
-          console.error("Failed to send renewal email:", emailError.message);
-        }
+        runEmailTask(
+          () =>
+            sendRenewalEmail(user, {
+              tier: user.tier,
+              currentPeriodEnd: periodEnd,
+            }),
+          "sendRenewalEmail",
+        );
       } else {
         console.error("User not found for subscription:", invoice.subscription);
       }
     } catch (error) {
       console.error("Error in auto-renewal:", error);
-      throw error;
     }
   }
 }
@@ -363,15 +399,10 @@ async function handleInvoicePaymentFailed(invoice) {
       console.log(`Payment failed for ${user.email}`);
 
       // Send payment failed email
-      try {
-        await sendPaymentFailedEmail(user, invoice);
-        console.log("Payment failed email sent to:", user.email);
-      } catch (emailError) {
-        console.error(
-          "Failed to send payment failed email:",
-          emailError.message,
-        );
-      }
+      runEmailTask(
+        () => sendPaymentFailedEmail(user, invoice),
+        "sendPaymentFailedEmail",
+      );
     }
   }
 }
@@ -437,12 +468,10 @@ async function handleSubscriptionDeleted(subscription) {
     console.log("User downgraded to free tier");
 
     // Send cancellation email
-    try {
-      await sendCancellationEmail(user, { tier: user.tier });
-      console.log("Cancellation email sent to:", user.email);
-    } catch (emailError) {
-      console.error("Failed to send cancellation email:", emailError.message);
-    }
+    runEmailTask(
+      () => sendCancellationEmail(user, { tier: user.tier }),
+      "sendCancellationEmail",
+    );
   }
 }
 async function handleInvoicePaid(invoice) {
