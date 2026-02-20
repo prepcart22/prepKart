@@ -70,10 +70,7 @@ export async function POST(request) {
     }
 
     // Create checkout
-    const baseUrl =
-      process.env.NODE_ENV === "production"
-        ? "https://prep-kart.vercel.app"
-        : "http://localhost:3000";
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
 
     // Use baseUrl
     const session = await stripe.checkout.sessions.create({

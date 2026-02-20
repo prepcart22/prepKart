@@ -9,7 +9,15 @@ export async function GET(request) {
   const userId = searchParams.get("user_id");
   const tier = searchParams.get("tier");
 
-  const origin = request.nextUrl.origin;
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const forwardedProto = request.headers.get("x-forwarded-proto") || "https";
+  const inferredOrigin = forwardedHost
+    ? `${forwardedProto}://${forwardedHost}`
+    : request.nextUrl.origin;
+  const origin = (process.env.NEXT_PUBLIC_APP_URL || inferredOrigin).replace(
+    /\/$/,
+    "",
+  );
 
   if (!sessionId) {
     console.error("Missing session_id");
