@@ -12,7 +12,7 @@ import {
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { useTranslations } from "next-intl";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { IoIosArrowDown } from "react-icons/io";
 
 export default function GenerateWeeklyPlan({ voiceText, onPlanGenerated }) {
@@ -29,8 +29,22 @@ export default function GenerateWeeklyPlan({ voiceText, onPlanGenerated }) {
   const t = useTranslations("generatePlan");
   const params = useParams();
   const locale = params.locale;
+  const router = useRouter();
 
-  // to recheck authentuication token
+  const redirectToLoginAfterAlert = () => {
+    const loginPath = locale ? `/${locale}/login` : "/login";
+
+    toast.error("Login required to generate meal plans", {
+      toastId: "generate-plan-login-required",
+      autoClose: 1800,
+    });
+
+    setTimeout(() => {
+      router.push(loginPath);
+    }, 250);
+  };
+
+  // to recheck authentication token
   useEffect(() => {
     const checkAuth = () => {
       const token =
@@ -256,6 +270,17 @@ export default function GenerateWeeklyPlan({ voiceText, onPlanGenerated }) {
   // Generate plan handler
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const token =
+      localStorage.getItem("token") ||
+      localStorage.getItem("accessToken") ||
+      (user?.token ? user.token : null);
+
+    if (!user || !token) {
+      redirectToLoginAfterAlert();
+      return;
+    }
+
     setLoading(true);
     setError("");
     setGeneratingProgress(0);
@@ -268,11 +293,6 @@ export default function GenerateWeeklyPlan({ voiceText, onPlanGenerated }) {
     }, 500);
 
     try {
-      const token =
-        localStorage.getItem("token") ||
-        localStorage.getItem("accessToken") ||
-        (user?.token ? user.token : null);
-
       const requestBody = {
         province: form.province,
         goal: form.goal,
@@ -305,8 +325,11 @@ export default function GenerateWeeklyPlan({ voiceText, onPlanGenerated }) {
         clearInterval(progressInterval);
         setLoading(false);
 
-        // Always show the error toast
-        toast.error(data.error || "Unable to generate plan");
+        if (data.requiresLogin) {
+          redirectToLoginAfterAlert();
+        } else {
+          toast.error(data.error || "Unable to generate plan");
+        }
 
         // If it's a limit issue, show the upgrade warning
         if (data.limitReached) {
