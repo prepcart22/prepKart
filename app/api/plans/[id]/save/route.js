@@ -80,6 +80,7 @@ export async function POST(request, { params }) {
           planData.swaps?.allowed || SWAPS_PER_PLAN[actualUserTier] || 1,
         swapsUsed: planData.swaps?.used || 0,
         isSaved: true,
+        savedAt: new Date(),
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         userId: userId,
         userEmail: userEmail,
@@ -107,6 +108,8 @@ export async function POST(request, { params }) {
       savedPlan.swapsUsed = planData.swaps?.used || savedPlan.swapsUsed;
       savedPlan.swapsAllowed =
         planData.swaps?.allowed || savedPlan.swapsAllowed;
+      savedPlan.isSaved = true;
+      savedPlan.savedAt = new Date();
       savedPlan.updatedAt = new Date();
     }
 
