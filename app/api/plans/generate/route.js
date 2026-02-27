@@ -799,10 +799,31 @@ export async function POST(request) {
 
     console.log("Meal plan generated successfully");
 
-    // Generate plan ID
-    const planId = `temp_${Date.now()}_${Math.random()
-      .toString(36)
-      .substr(2, 9)}`;
+    // Save generated plan immediately for authenticated users as draft
+    let savedPlan = null;
+    if (userId) {
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      savedPlan = await new Plan({
+        title: `${inputs.goal} ${inputs.cuisine ? inputs.cuisine + " " : ""}Meal Plan`,
+        days: planData.days || [],
+        inputs,
+        source: "openai",
+        generationMethod: "openai",
+        swapsAllowed: config.swapsPerPlan,
+        swapsUsed: 0,
+        isSaved: false,
+        expiresAt,
+        userId: String(userId),
+        userEmail,
+        tier: userTier,
+      }).save();
+    }
+
+    // Generate temporary ID only for non-authenticated fallback
+    const planId =
+      savedPlan?._id?.toString() ||
+      `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Prepare response
     const planResponse = {
@@ -846,7 +867,7 @@ export async function POST(request) {
       },
     };
 
-    // Update user's plan count
+    // Update user's monthly generation count
     if (userId) {
       await User.findByIdAndUpdate(userId, {
         $inc: { monthly_plan_count: 1 },

@@ -66,7 +66,7 @@ export default function AdminLayout({ children }) {
     },
     {
       icon: CreditCard,
-      label: "Subscriptions",
+      label: "Newsletter Subscribers",
       href: `/${locale}/admin/subscriptions`,
       active: pathname.includes("/admin/subscriptions"),
     },
