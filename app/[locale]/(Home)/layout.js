@@ -4,7 +4,6 @@ import Navbar from "@/components/shared/Navbar";
 import Footer from "@/components/shared/Footer";
 import React, { useState, useEffect, useRef } from "react";
 // import ToastProvider from "@/components/ToastProvider";
-import Providers from "@/app/providers";
 import { FaShoppingCart } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
@@ -200,7 +199,7 @@ export default function HomeLayout({ children }) {
   const isCartEnabled = user && cartData.checkedCount > 0;
 
   return (
-    <Providers className='relative min-h-screen'>
+    <div className='relative min-h-screen'>
       <Navbar />
       <main className='min-h-screen'>
         {children}
@@ -242,6 +241,6 @@ export default function HomeLayout({ children }) {
           </div>
         </button>
       </div>
-    </Providers>
+    </div>
   );
 }

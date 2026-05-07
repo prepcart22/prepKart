@@ -1,12 +1,15 @@
-import {getRequestConfig} from 'next-intl/server';
+import { getRequestConfig } from "next-intl/server";
+import { hasLocale } from "next-intl";
 
-// Define supported locales
-export const locales = ['en', 'fr'];
-export const defaultLocale = 'en';
+export const locales = ["en", "fr"];
+export const defaultLocale = "en";
 
-export default getRequestConfig(async ({locale}) => {
-  // Load messages for the given locale
+export default getRequestConfig(async ({ requestLocale }) => {
+  const requested = await requestLocale;
+  const locale = hasLocale(locales, requested) ? requested : defaultLocale;
+
   return {
-    messages: (await import(`../messages/${locale}.json`)).default
-  };
+    locale,
+    messages: (await import(`../../messages/${locale}.json`)).default,
+    timeZone: "UTC",  };
 });
