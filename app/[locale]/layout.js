@@ -1,87 +1,80 @@
-"use client";
-
-import React, { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { notFound } from "next/navigation";
+import { hasLocale } from "next-intl";
+import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
+import { locales } from "@/app/i18n/request";
+import ProvidersClient from "./providers-client";
 import "../globals.css";
-import { NextIntlClientProvider } from "next-intl";
-import enMessages from "../../messages/en.json";
-import frMessages from "../../messages/fr.json";
-import Providers from "../providers";
-import ToastProvider from "@/components/ToastProvider";
 
-const validLocales = ["en", "fr"];
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://prepcart.ca";
 
-export default function RootLayout({ children, params }) {
-  const [locale, setLocale] = useState("en");
-  const pathname = usePathname();
-  const router = useRouter();
+export function generateStaticParams() {
+  return locales.map((locale) => ({ locale }));
+}
 
-  useEffect(() => {
-    const unwrapParams = async () => {
-      try {
-        const unwrappedParams = await params;
-        const newLocale = unwrappedParams?.locale;
+export async function generateMetadata({ params }) {
+  const { locale } = await params;
+  const safeLocale = hasLocale(locales, locale) ? locale : "en";
 
-        // Validate locale
-        if (!newLocale || !validLocales.includes(newLocale)) {
-          console.error("Invalid locale detected:", newLocale);
-          // Redirect to default locale or handle error
-          router.replace("/en");
-          return;
-        }
+  const t = await getTranslations({ locale: safeLocale, namespace: "metadata" });
+  const title = t("title");
+  const description = t("description");
 
-        setLocale(newLocale);
-      } catch (error) {
-        console.error("Error unwrapping params:", error);
-        setLocale("en");
-      }
-    };
-
-    unwrapParams();
-  }, [params, router]);
-
-  // Select messages based on locale
-  const messages = locale === "fr" ? frMessages : enMessages;
-
-  // Function to create language-switched URL
-  const createLocalizedPath = (newLocale) => {
-    if (!pathname) return `/${newLocale}`;
-
-    // Extract the current locale
-    const segments = pathname.split("/").filter(Boolean);
-    const currentLocale = segments[0];
-
-    if (!["en", "fr"].includes(currentLocale)) {
-      return `/${newLocale}${pathname}`;
-    }
-
-    return `/${newLocale}${pathname.slice(currentLocale.length + 1) || "/"}`;
-  };
-
-  // Early return if locale is invalid
-  if (!validLocales.includes(locale)) {
-    return (
-      <html lang="en">
-        <body>
-          <div>Loading...</div>
-        </body>
-      </html>
-    );
+  // Build hreflang map for the homepage of each locale.
+  const languages = {};
+  for (const loc of locales) {
+    languages[loc] = `${SITE_URL}/${loc}`;
   }
+  languages["x-default"] = `${SITE_URL}/en`;
+
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: {
+      default: `Prepcart — ${title}`,
+      template: "%s | Prepcart",
+    },
+    description,
+    alternates: {
+      canonical: `${SITE_URL}/${safeLocale}`,
+      languages,
+    },
+    openGraph: {
+      type: "website",
+      locale: safeLocale === "fr" ? "fr_CA" : "en_CA",
+      url: `${SITE_URL}/${safeLocale}`,
+      siteName: "Prepcart",
+      title: `Prepcart — ${title}`,
+      description,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `Prepcart — ${title}`,
+      description,
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  };
+}
+
+export default async function LocaleLayout({ children, params }) {
+  const { locale } = await params;
+
+  if (!hasLocale(locales, locale)) {
+    notFound();
+  }
+
+  // Enable static rendering for this locale
+  setRequestLocale(locale);
+
+  const messages = await getMessages();
 
   return (
     <html lang={locale}>
-      <head>
-        <title>Prepcart</title>
-        <meta name="description" content="AI Meal Planning for Canadians" />
-      </head>
       <body>
-        <Providers>
-          <NextIntlClientProvider locale={locale} messages={messages}>
-            {children}
-            <ToastProvider />
-          </NextIntlClientProvider>
-        </Providers>
+        <ProvidersClient locale={locale} messages={messages}>
+          {children}
+        </ProvidersClient>
       </body>
     </html>
   );
