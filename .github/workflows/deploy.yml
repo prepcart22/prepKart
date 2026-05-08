@@ -17,6 +17,7 @@ jobs:
         uses: YaRissi/setup-coolify@main
         with:
           token: ${{ secrets.COOLIFY_API_TOKEN }}
+          url: https://coolify.prepcart.ca
       
       - name: Deploy application
         run: coolify deploy name "prepcart.ca"
