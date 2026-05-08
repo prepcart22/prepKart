@@ -1,0 +1,22 @@
+name: Deploy with Coolify
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install coolify
+        uses: yarissi/setup-coolify@v1
+        with:
+          token: ${{ secrets.COOLIFY_API_TOKEN }}
+      
+      - name: Deploy application
+        run: coolify deploy name "prepcart.ca"
